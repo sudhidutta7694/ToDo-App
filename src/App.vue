@@ -7,3 +7,9 @@ import ToDoHeader from './components/ToDoHeader.vue'
   <ToDoHeader />
   <RouterView />
 </template>
+
+<style>
+  body {
+    background-color: rgb(233, 237, 250);
+  }
+</style>
