@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TODO-App
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -39,3 +40,7 @@ npm run test:unit
 ```sh
 npm run lint
 ```
+=======
+# ToDo-App
+This repository consists of a basic ToDo app made in vue
+>>>>>>> origin/main
