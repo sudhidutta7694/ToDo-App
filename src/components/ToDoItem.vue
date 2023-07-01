@@ -2,22 +2,28 @@
     <div>
         <li
             class="w-[78vw] md:w-[68vw] lg:w-[48vw] px-4 py-2 bg-indigo-200 rounded-xl flex justify-between shadow-xl hover:shadow-2xl ease-in hover:scale-x-105 transition-all duration-100">
-            <input type="checkbox" :checked="todo.isCompleted" class="custom-checkbox" :id="`todo-checkbox-${todo.id}`"
-                @change="toggleCompleted" />
+            <input type="checkbox" 
+            :checked="todo.isCompleted" 
+            class="custom-checkbox" 
+            :id="`todo-checkbox-${todo.id}`"
+            @input="$emit('toggleCompleted', index)" />
             <label :for="`todo-checkbox-${todo.id}`"></label>
             <div class="todo">
-                <input v-if="todo.isEditting" type="text" :value="todo.todo">
-                <div v-else class="text-center text-2xl max-w-[50vw] md:max-w-[48vw] lg:max-w-[38vw] overflow-hidden font-semibold font-serif">{{ todo.todo }}</div>
+                <input v-if="todo.isEditing" type="text" :value="todo.todo" class="max-w-[50vw] md:max-w-[48vw] lg:max-w-[38vw] h-fit overflow-hidden px-2 bg-indigo-100 hover:border-3 rounded-xl text-2xl font-semibold font-serif text-center border-2 border-indigo-800 transition-all ease-in duration-200" @input="$emit('updateTodo', $event.target.value, index)">
+                <div v-else class="text-center text-2xl max-w-[50vw] md:max-w-[48vw] lg:max-w-[38vw] overflow-hidden font-semibold font-serif" :class="{ 'line-through cursor-not-allowed': todo.isCompleted}">{{ todo.todo }}</div>
             </div>
             <div class="todoActions flex gap-1">
-                <i v-if="todo.isCompleted"
-                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-300 text-3xl fas fa-check-circle text-green-500"></i>
-                <i v-if="todo.isCompleted"
-                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-3xl fas fa-times-circle text-red-500"></i>
+                <i v-if="todo.isEditing"
+                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-300 text-2xl md:text-3xl fas fa-save text-green-500"
+                    @click="$emit('toggleEdit', index)"></i>
+                <!-- <i v-if="todo.isCompleted"
+                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-2xl fas fa-times-circle text-red-500"></i> -->
+                <i v-else
+                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-2xl md:text-3xl fas fa-edit text-green-500"
+                    @click="$emit('toggleEdit', index)"></i>
                 <i
-                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-3xl fas fa-edit text-green-500"></i>
-                <i
-                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-3xl fas fa-trash-alt text-red-500"></i>
+                    class="hover:drop-shadow-lg hover:scale-105 transition-all ease-in duration-200 text-2xl md:text-3xl fas fa-trash-alt text-red-500"
+                    @click="$emit('deleteTodo', todo.id)"></i>
 
 
             </div>
@@ -32,23 +38,15 @@ export default {
             type: Object,
             required: true,
         },
+        index: {
+            type: Number,
+            required: true,
+        }
     },
-    mounted() {
-        this.animateTick();
-    },
-    methods: {
-        toggleCompleted() {
-            // Handle the logic to update the completed state of the todo
-        },
-        animateTick() {
-            if (this.todo.isCompleted) {
-                const tick = this.$el.querySelector(".animate-tick");
-                tick.classList.add("animate-tick-scale");
-            }
-        },
-    }
 }
 </script>
+
+<script setup> defineEmits(['toggleCompleted', 'toggleEdit', 'updateTodo', 'deleteTodo']) </script>
 
 <style scoped>
 
