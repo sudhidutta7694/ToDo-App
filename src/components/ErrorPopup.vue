@@ -20,10 +20,10 @@
   </template>
   
   <script setup>
-  import { ref, onMounted, defineEmits } from "vue";
+  // import {  defineEmits } from "vue";
   
   const errorMessage = "The ToDo cannot be empty.";
-  const errorSound = ref(null);
+  // const errorSound = ref(null);
   const emit = defineEmits(["dismiss"]);
   
 //   const playErrorSound = () => {

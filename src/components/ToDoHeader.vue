@@ -9,16 +9,20 @@
             </div>
         </div>
         <div class="right-container flex space-x-3 text-xl sm:text-2xl font-serif font-semibold items-center">
-            <RouterLink to="/" class="home cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">Home</RouterLink>
-            <RouterLink to="/history" class="home cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">History</RouterLink>
-            <RouterLink to="/others" class="about cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">Others</RouterLink>
+            <!-- <RouterLink to="/" class="home cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">Home</RouterLink> -->
+            <!-- <RouterLink to="/history" class="home cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">History</RouterLink>
+            <RouterLink to="/others" class="about cursor-pointer text-indigo-800 hover:text-indigo-500 transition-colors duration-300">Others</RouterLink> -->
         </div>
+        <img :src="photoURL" class="rounded-full border-2 border-indigo-900 w-9 h-9 md:w-11 md:h-11 hover:scale-110 transition-all duration-200 ease-in hover:drop-shadow-md bg-indigo-900" />
+        
+        
     </div>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router';
-
+// import { RouterLink } from 'vue-router';
+const photoURL = JSON.parse(localStorage.getItem("user")).photoURL;
+console.log(photoURL)
 </script>
 
 <style lang="scss" scoped>
