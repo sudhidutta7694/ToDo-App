@@ -20,11 +20,25 @@
 </template>
 
 <script setup>
-// import { RouterLink } from 'vue-router';
-const photoURL = JSON.parse(localStorage.getItem("user")).photoURL;
-console.log(photoURL)
+import { ref } from 'vue';
+import { app } from "../firebase/firebase"
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+
+const photoURL = ref('https://cdn.pixabay.com/photo/2019/10/28/14/38/emoji-4584576_640.png');
+
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, (user) => {
+  if (user && user.photoURL) {
+    photoURL.value = user.photoURL;
+  } else {
+    // Set a placeholder image URL for the dummy face
+    photoURL.value = 'https://cdn.pixabay.com/photo/2019/10/28/14/38/emoji-4584576_640.png';
+  }
+});
+
 </script>
 
-<style lang="scss" scoped>
 
+<style>
 </style>

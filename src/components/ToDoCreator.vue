@@ -17,7 +17,7 @@
   </template>
   
   <script setup>
-  import { reactive, defineEmits } from "vue";
+  import { reactive } from "vue";
   import ErrorPopup from "./ErrorPopup.vue";
   
   const emit = defineEmits(["create-Todo"]);

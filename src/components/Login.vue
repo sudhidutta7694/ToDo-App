@@ -39,7 +39,8 @@
               </button>
 
               <button
-                class="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:drop-shadow-sm focus:shadow-sm focus:shadow-outline mt-5" @click="githubSignUp">
+                class="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:drop-shadow-sm focus:shadow-sm focus:shadow-outline mt-5"
+                @click="githubSignUp">
                 <div class="bg-white p-1 rounded-full hover:scale-110 transition-all duration-200 ease-in">
                   <svg class="w-6" viewBox="0 0 32 32">
                     <path fill-rule="evenodd"
@@ -103,107 +104,102 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { app } from "../firebase/firebase"
-import { useRouter } from "vue-router"
-import { ref } from "vue"
-import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
 
-export default {
-  setup() {
-    const auth = getAuth(app);
-    const email = ref("");
-    const password = ref("");
-    const router = useRouter();
+const auth = getAuth(app);
+const email = ref('');
+const password = ref('');
+const router = useRouter();
+
+const createUser = () => {
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      localStorage.setItem('user', JSON.stringify(user));
+      // Redirect or perform other actions
+      router.push("/home");
+    })
+    .catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+
+      switch (errorCode) {
+        case 'auth/weak-password':
+          alert('The password is too weak. Please choose a stronger password.');
+          break;
+        case 'auth/email-already-in-use':
+          alert('The email address is already in use. Please use a different email.');
+          break;
+        case 'auth/invalid-email':
+          alert('The email address is invalid. Please provide a valid email.');
+          break;
+        default:
+          alert(errorMessage);
+          break;
+      }
+
+      console.log(errorCode, errorMessage);
+    });
+};
 
 
-    const createUser = () => {
-      createUserWithEmailAndPassword(auth, email.value, password.value)
-        .then((userCredential) => {
-          // Signed in 
-          const user = userCredential.user;
-          localStorage.setItem("user", JSON.stringify(user))
-          router.push("/home")
-          // ...
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log(errorCode, errorMessage);
-          // ..
-        });
-    }
+const provider = new GoogleAuthProvider();
 
-    const provider = new GoogleAuthProvider();
+const googleSignUp = () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      localStorage.setItem('access_token', JSON.stringify(token));
+      const user = result.user;
+      localStorage.setItem('user', JSON.stringify(user));
+      // Redirect or perform other actions
+      router.push("/home");
+    })
+    .catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorCode, ': ', errorMessage);
+      const email = error.customData.email;
+      console.log('Email: ', email);
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      console.log('AuthCredential: ', credential);
+      // Handle error
+    });
+};
 
-    const googleSignUp = () => {
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          // This gives you a Google Access Token. You can use it to access the Google API.
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          const token = credential.accessToken;
-          localStorage.setItem("access_token", JSON.stringify(token))
-          // The signed-in user info.
-          const user = result.user;
-          localStorage.setItem("user", JSON.stringify(user))
-          router.push("/home")
-          // IdP data available using getAdditionalUserInfo(result)
-          // ...
-        }).catch((error) => {
-          // Handle Errors here.
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log(errorCode, ": ", errorMessage);
-          // The email of the user's account used.
-          const email = error.customData.email;
-          console.log("Email: ", email);
-          // The AuthCredential type that was used.
-          const credential = GoogleAuthProvider.credentialFromError(error);
-          console.log("AuthCredential: ", credential);
-          // ...
-        });
-    }
+const provider2 = new GithubAuthProvider();
 
-    const provider2 = new GithubAuthProvider();
+const githubSignUp = () => {
+  signInWithPopup(auth, provider2)
+    .then((result) => {
+      const credential = GithubAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      localStorage.setItem('access_token', token);
+      const user = result.user;
+      localStorage.setItem('user', JSON.stringify(user));
+      // Redirect or perform other actions
+      router.push("/home");
+    })
+    .catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorCode, ': ', errorMessage);
+      const email = error.customData.email;
+      console.log('Email: ', email);
+      const credential = GithubAuthProvider.credentialFromError(error);
+      console.log('AuthCredential: ', credential);
+      // Handle error
+    });
+};
 
-    const githubSignUp = () => {
-      signInWithPopup(auth, provider2)
-        .then((result) => {
-          // This gives you a GitHub Access Token. You can use it to access the GitHub API.
-          const credential = GithubAuthProvider.credentialFromResult(result);
-          const token = credential.accessToken;
-          localStorage.setItem("access_token", token);
-          // The signed-in user info.
-          const user = result.user;
-          localStorage.setItem("user", JSON.stringify(user));
-          router.push("/home")
-          // IdP data available using getAdditionalUserInfo(result)
-          // ...
-        }).catch((error) => {
-          // Handle Errors here.
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log(errorCode, ": ", errorMessage);
-          // The email of the user's account used.
-          const email = error.customData.email;
-          console.log("Email: ", email);
-          // The AuthCredential type that was used.
-          const credential = GithubAuthProvider.credentialFromError(error);
-          console.log("AuthCredential: ", credential)
-          // ...
-        });
-    }
-    
-
-    return {
-      githubSignUp,
-      googleSignUp,
-      createUser,
-      email,
-      password,
-    }
-  }
-}
+defineExpose(email, password, createUser, googleSignUp, githubSignUp);
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+/* Your style code here */
+</style>

@@ -52,171 +52,183 @@
 </template>
   
 <script>
-import { db } from "../firebase/firebase"
-import { doc, setDoc, updateDoc,  deleteDoc, collection, onSnapshot } from "firebase/firestore"
-import { ref, watch, computed, onMounted } from "vue";
-// import { uid } from "uid";
-import ToDoCreator from "../components/ToDoCreator.vue";
 import ToDoItem from "../components/ToDoItem.vue";
+import ToDoCreator from "../components/ToDoCreator.vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+// import { getAuth } from "firebase/auth";
+import { db } from "../firebase/firebase";
+import {
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
 
 export default {
-    components: {
-        ToDoCreator,
-        ToDoItem,
-    },
-    setup() {
-        const todoList = ref([]);
-        const showDeletePopup = ref(false);
-        const todoToDelete = ref(null);
-        const showCompletedPopup = ref(false);
-        // const todoRef = collection(db, 'Todos')
+  components: {
+    ToDoItem,
+    ToDoCreator,
+  },
+  setup() {
+    const todoList = ref([]);
+    const showDeletePopup = ref(false);
+    const todoToDelete = ref(null);
+    const showCompletedPopup = ref(false);
 
+    // const auth = getAuth();
+    const userId = JSON.parse(localStorage.getItem("user"))?.uid;
+    const todosCollectionRef = collection(db, "Users", userId, "Todos");
 
-        watch(todoList, () => {
-            setTodoLocalStorage();
-        }, {
-            deep: true,
+    const createTodo = async (todo) => {
+      const id = new Date().getTime().toString();
+      const newTodo = {
+        id,
+        todo,
+        isCompleted: false,
+        isEditing: false,
+      };
+
+      try {
+        const todoDocRef = doc(todosCollectionRef, id);
+        await setDoc(todoDocRef, newTodo);
+        // todoList.value.push({ ...newTodo, docRef: todoDocRef });
+      } catch (error) {
+        console.error("Error creating todo:", error);
+      }
+    };
+
+    const getTodos = () => {
+      try {
+        onSnapshot(todosCollectionRef, (snapshot) => {
+          const todos = [];
+          snapshot.forEach((doc) => {
+            todos.push({ id: doc.id, ...doc.data() });
+          });
+          todoList.value = todos;
+        });
+      } catch (error) {
+        console.error("Error fetching todos:", error);
+      }
+    };
+
+    const todoCompleted = computed(() => {
+      return todoList.value.every((todo) => todo.isCompleted);
+    });
+
+    const toggleCompleted = async (todoPos) => {
+      const todo = todoList.value[todoPos];
+      const todoRef = doc(todosCollectionRef, todo.id);
+
+      try {
+        await updateDoc(todoRef, {
+          isCompleted: !todo.isCompleted,
+        });
+        // todoList.value[todoPos].isCompleted = !todoList.value[todoPos].isCompleted;
+      } catch (error) {
+        console.error("Error updating todo completion status:", error);
+      }
+
+      if (todoCompleted.value) {
+        showCompletedPopup.value = true;
+        setTimeout(() => {
+          showCompletedPopup.value = false;
+        }, 3000);
+      }
+    };
+
+    const toggleEditing = async (todoPos) => {
+      const todo = todoList.value[todoPos];
+      const todoRef = doc(todosCollectionRef, todo.id);
+
+      try {
+        await updateDoc(todoRef, {
+          isEditing: !todo.isEditing,
+        });
+        // todoList.value[todoPos].isEditing = !todoList.value[todoPos].isEditing;
+      } catch (error) {
+        console.error("Error updating todo:", error);
+      }
+    };
+
+    const updateTodo = async (todoVal, todoPos) => {
+      const todo = todoList.value[todoPos];
+      const todoRef = doc(todosCollectionRef, todo.id);
+
+      try {
+        await updateDoc(todoRef, {
+          todo: todoVal,
         });
 
-        const createTodo = async (todo) => {
-            const id = new Date().getTime().toString();
-            const newTodo = {
-                id,
-                todo,
-                isCompleted: false,
-                isEditing: false,
-            };
+        // todoList.value[todoPos].todo = todoVal;
+      } catch (error) {
+        console.error("Error updating todo:", error);
+      }
+    };
 
-            try {
-                const docRef = doc(db, "Todos", id);
-                await setDoc(docRef, newTodo);
-                todoList.value.push({ ...newTodo, docRef });
-                setTodoLocalStorage();
-            } catch (error) {
-                console.error('Error creating todo:', error);
-            }
-        };
+    const confirmDelete = (todoID) => {
+      showDeletePopup.value = true;
+      todoToDelete.value = todoList.value.find((todo) => todo.id === todoID);
+    };
 
-        
-        const getTodo = () => {
-            try {
-                onSnapshot(collection(db, "Todos"), snapshot => {
-                    const todos = [];
-                    snapshot.forEach((doc) => {
-                        todos.push({ id: doc.id, ...doc.data() }); //Destructuring the snapshot
-                    });
-                    todoList.value = todos;
-                })
-            } catch (error) {
-                console.error('Error fetching todos:', error);
-            }
-        };
-        
-        onMounted (getTodo)
+    const confirmDeleteTodo = async () => {
+      const todoIdToDelete = todoToDelete.value.id;
+      const todoRef = doc(todosCollectionRef, todoIdToDelete);
 
-        const setTodoLocalStorage = () => {
-            localStorage.setItem("todoList", JSON.stringify(todoList.value));
-        };
+      try {
+        await deleteDoc(todoRef);
 
-        const todoCompleted = computed(() => {
-            return todoList.value.every((todo) => todo.isCompleted);
-        });
+        todoList.value = todoList.value.filter(
+          (todo) => todo.id !== todoIdToDelete
+        );
 
-        const toggleCompleted = async (todoPos) => {
-            const todo = todoList.value[todoPos]
-            const todoRef = doc(db, "Todos", todo.id)
+        closeDeletePopup();
+      } catch (error) {
+        console.error("Error deleting todo:", error);
+      }
+    };
 
-            try {
-                await updateDoc(todoRef, {
-                    isCompleted: !todo.isCompleted,
-                })
-                todoList.value[todoPos].isCompleted = !todoList.value[todoPos].isCompleted;
-            } catch (error) {
-                console.error('Error updating todo completion status:', error);
-            }
-            if (todoCompleted.value) {
-                showCompletedPopup.value = true;
-                setTimeout(() => {
-                    showCompletedPopup.value = false;
-                }, 3000);
-            }
-        };
+    const closeDeletePopup = () => {
+      showDeletePopup.value = false;
+      todoToDelete.value = null;
+    };
 
-        const toggleEditing = async (todoPos) => {
-            const todo = todoList.value[todoPos]
-            const todoRef = doc(db, "Todos", todo.id)
+    const hideCompletedPopup = () => {
+      showCompletedPopup.value = false;
+    };
 
-            try {
-                await updateDoc(todoRef, {
-                    isEditing: !todo.isEditing,
-                })
-                todoList.value[todoPos].isEditing = !todoList.value[todoPos].isEditing;
-            } catch (error) {
-                console.error('Error updating todo:', error);
-            }
-        };
+    onMounted(() => {
+      if (userId) {
+        getTodos();
+      }
+    });
 
-        const updateTodo = async (todoVal, todoPos) => {
-            const todo = todoList.value[todoPos];
-            const todoRef = doc(db, "Todos", todo.id);
+    onUnmounted(() => {
+      // Cleanup listener to avoid memory leaks
+      const unsubscribe = onSnapshot(todosCollectionRef, () => {});
+      unsubscribe();
+    });
 
-            try {
-                await updateDoc(todoRef, {
-                    todo: todoVal,
-                });
-
-                todoList.value[todoPos].todo = todoVal;
-            } catch (error) {
-                console.error("Error updating todo:", error);
-            }
-        };
-
-        const confirmDelete = (todoID) => {
-            showDeletePopup.value = true;
-            todoToDelete.value = todoList.value.find((todo) => todo.id === todoID);
-        };
-
-        const confirmDeleteTodo = async () => {
-            const todoIdToDelete = todoToDelete.value.id;
-
-            // Delete the todo
-            await deleteDoc(doc(db, "Todos", todoIdToDelete));
-
-            // Remove the todo from the todoList
-            const updatedTodoList = todoList.value.filter((todo) => todo.id.toString() !== todoIdToDelete);
-            todoList.value = updatedTodoList;
-
-            // Close the delete popup
-            closeDeletePopup();
-        };
-
-
-        const closeDeletePopup = () => {
-            showDeletePopup.value = false;
-            todoToDelete.value = null;
-        };
-
-        const hideCompletedPopup = () => {
-            showCompletedPopup.value = false;
-        };
-
-        return {
-            todoList,
-            showDeletePopup,
-            todoToDelete,
-            showCompletedPopup,
-            createTodo,
-            toggleCompleted,
-            toggleEditing,
-            updateTodo,
-            confirmDelete,
-            confirmDeleteTodo,
-            closeDeletePopup,
-            hideCompletedPopup,
-        };
-    },
+    return {
+      todoList,
+      showDeletePopup,
+      todoToDelete,
+      showCompletedPopup,
+      createTodo,
+      toggleCompleted,
+      toggleEditing,
+      updateTodo,
+      confirmDelete,
+      confirmDeleteTodo,
+      closeDeletePopup,
+      hideCompletedPopup,
+    };
+  },
 };
 </script>
+
+
   
 
 <style lang="scss" scoped>
